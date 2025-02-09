@@ -1,0 +1,9 @@
+[package]
+name = "duct_reader_check"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+duct = "0.13.7"
+env_logger = "0.11.6"
+log = "0.4.25"
