@@ -24,8 +24,16 @@ fn main() {
     let mut buf: Vec<u8> = vec![];
     let mut single_byte = [0u8];
 
+    // let (mut reader, writer) = os_pipe::pipe()?;
+    // let writer_clone = writer.try_clone()?;
+    // command.stdout(writer);
+    // command.stderr(writer_clone);
+
     let mut fake_stdin_wr = std::fs::File::create("./fake_stdin").unwrap();
     let fake_stdin_rd = std::fs::File::open("./fake_stdin").unwrap();
+
+    // let (fake_stdin_rd, mut fake_stdin_wr) = os_pipe::pipe().unwrap();
+
     let mut reader = cmd!("python3", "-u", "test.py")
         .stdin_file(fake_stdin_rd)
         .stderr_to_stdout()
@@ -37,7 +45,7 @@ fn main() {
     let wait_until_str = "hello to stdout";
 
     info!("Waiting for -->{wait_until_str}<--");
-    let mut idle_count = 0;
+    // let mut idle_count = 0;
     loop {
         match reader.read(&mut single_byte) {
             Ok(_good) => {
@@ -78,7 +86,14 @@ fn main() {
             info!("_bad = {_bad}");
         }
     }
-    fake_stdin_wr.flush();
+    match fake_stdin_wr.flush() {
+        Ok(_good) => {
+            info!("_good = {_good:?}");
+        }
+        Err(_bad) => {
+            error!("_bad = {_bad}");
+        }
+    }
 
     info!("starting loop");
     loop {
