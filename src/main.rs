@@ -6,6 +6,9 @@ use env_logger::Builder;
 use log::LevelFilter;
 use std::io::Write;
 
+// use filedescriptor::{Error, Pipe};
+// use std::io::{Read, Write};
+
 fn main() {
     let mut builder = Builder::new();
     builder
@@ -21,6 +24,17 @@ fn main() {
         .filter_level(LevelFilter::Debug)
         .init();
 
+    duct_reader_check_main();
+
+    // pyo3_check_main();
+}
+
+fn pyo3_check_main() {
+
+    //
+}
+
+fn duct_reader_check_main() {
     let mut buf: Vec<u8> = vec![];
     let mut single_byte = [0u8];
 
@@ -34,7 +48,16 @@ fn main() {
 
     // let (fake_stdin_rd, mut fake_stdin_wr) = os_pipe::pipe().unwrap();
 
-    let mut reader = cmd!("python3", "-u", "test.py")
+    // let mut pipe = Pipe::new().unwrap();
+    // let (mut fake_stdin_rd, mut fake_stdin_wr) = (pipe.read, pipe.write);
+    // pipe.write.write(b"hello")?;
+    // drop(pipe.write);
+
+    // let mut s = String::new();
+    // pipe.read.read_to_string(&mut s)?;
+    // assert_eq!(s, "hello");
+
+    let mut reader = cmd!("python", "-u", "test.py")
         .stdin_file(fake_stdin_rd)
         .stderr_to_stdout()
         .reader()
@@ -49,6 +72,7 @@ fn main() {
     loop {
         match reader.read(&mut single_byte) {
             Ok(_good) => {
+                debug!("_good = {_good}");
                 if _good > 0 {
                     buf.push(single_byte[0]);
                     if let Ok(chks) = std::str::from_utf8(&buf) {
@@ -74,8 +98,8 @@ fn main() {
         }
     }
 
-    info!("sleeping 2s on rust side (fake delay)");
-    std::thread::sleep(std::time::Duration::from_secs(2));
+    let dur = std::time::Duration::from_secs_f32(5.0);
+    std::thread::sleep(dur);
 
     let tmpv = vec![0];
     match fake_stdin_wr.write(tmpv.as_slice()) {
@@ -88,19 +112,22 @@ fn main() {
     }
     match fake_stdin_wr.flush() {
         Ok(_good) => {
-            info!("_good = {_good:?}");
+            info!("flush: _good = {_good:?}");
         }
         Err(_bad) => {
             error!("_bad = {_bad}");
         }
     }
 
-    info!("starting loop");
+    info!("Starting loop");
     loop {
         match reader.read(&mut single_byte) {
             Ok(num_bytes) => {
                 if num_bytes > 0 {
                     buf.push(single_byte[0]);
+                    if let Ok(chks) = std::str::from_utf8(&buf) {
+                        debug!("chks = {chks}");
+                    }
                     continue;
                 }
             }
